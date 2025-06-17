@@ -1,0 +1,18 @@
+query DeliveryInput {
+  cart {
+    cost {
+      totalAmount {
+        amount
+      }
+    }
+    deliveryGroups {
+      id
+    }
+  }
+  discount {
+    discountClasses
+    metafield(namespace: "$app:discount-rules-function", key: "function-configuration") {
+      value
+    }
+  }
+}

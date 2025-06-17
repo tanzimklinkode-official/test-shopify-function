@@ -1,0 +1,28 @@
+client_id = "f17876b3623a269729865b4967b21c3e"
+name = "function-app"
+handle = "function-app-22"
+application_url = "https://stirred-bear-vaguely.ngrok-free.app/"
+embedded = true
+[build]
+dev_store_url = "tanzim-store1.myshopify.com"
+include_config_on_deploy = true
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access
+use_legacy_install_flow = true
+[auth]
+redirect_urls = [
+"https://stirred-bear-vaguely.ngrok-free.app/authenticate"
+]
+[webhooks]
+api_version = "2025-04"
+[[webhooks.subscriptions]]
+uri = "/webhook/customers-data-request"
+compliance_topics = [ "customers/data_request" ]
+[[webhooks.subscriptions]]
+uri = "/webhook/customers-redact"
+compliance_topics = [ "customers/redact" ]
+[[webhooks.subscriptions]]
+uri = "/webhook/shop-redact"
+compliance_topics = [ "shop/redact" ]
+[pos]
+embedded = false
