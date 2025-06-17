@@ -8,6 +8,9 @@ import {
     TextField,
     Button,
     InlineError,
+    Grid,
+    Select,
+    Box,
     InlineStack,
     BlockStack,
     Popover,
@@ -38,8 +41,26 @@ const Create = () => {
 
 
     const handleSelect = useCallback((label) => {
+        let options = [];
+        if (label === 'Cart Total' || label === 'Item Count') {
+            options = [
+                { label: 'More than', value: 'more_than' },
+                { label: 'Less than', value: 'less_than' },
+            ];
+        } else if (label === 'SKU') {
+            options = [
+                { label: 'If found', value: 'if_found' },
+                { label: 'If not found', value: 'if_not_found' },
+                { label: 'If starts with', value: 'starts_with' },
+            ];
+        }
         if (inputs.length < maxConditions) {
-            setInputs((prev) => [...prev, { label, value: '' }]);
+            setInputs((prev) => [...prev, {
+                label,
+                condition: options.length ? options[0].value : '',
+                options,
+                value: '',
+            }]);
         }
         setActive(false); // close the popover
     }, [inputs]);
@@ -51,6 +72,14 @@ const Create = () => {
             return updated;
         });
     }
+
+    const handleSelectChange = (index) => (newValue) => {
+        setInputs((prev) => {
+            const updated = [...prev];
+            updated[index].condition = newValue;
+            return updated;
+        });
+    };
 
     const handleRemove = (indexToRemove) => {
     setInputs((prev) => prev.filter((_, index) => index !== indexToRemove));
@@ -71,6 +100,11 @@ const Create = () => {
                 startDate,
                 endDate,
                 discountCode,
+                rules: inputs.map(input => ({
+                label: input.label,
+                type: input.condition,
+                value: input.value,
+            })),
             };
             const response = await postRequest("/api/rules", data);
             if (response.success) {
@@ -104,7 +138,11 @@ const Create = () => {
                         requiredIndicator
                     />
 
-                    <BlockStack gap="200">
+                    <Box style={{
+                        border: '1px solid #dfe3e8',
+                        padding: '16px',
+                    }}>
+                    <BlockStack gap="200" >
                         <Text variant="headingMd" as="h2">
                             Rules & conditions ({inputs.length} / {maxConditions})
                         </Text>
@@ -125,21 +163,37 @@ const Create = () => {
                                             <Text variant="bodySm" ><small>remove</small></Text>
                                         </Button>
                                     </InlineStack>
-                                    <TextField
-                                        value={input.value}
-                                        onChange={handleInputChange(index)}
-                                        autoComplete="off"
-                                        
-                                    />
+
+
+
+                                    <Grid>
+                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                            {input.options && (
+                                                <Select
+                                                    labelHidden
+                                                    options={input.options}
+                                                    onChange={handleSelectChange(index)}
+                                                    value={input.condition}
+                                                />
+                                            )}
+                                        </Grid.Cell>
+                                        <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                                            <TextField
+                                                value={input.value}
+                                                onChange={handleInputChange(index)}
+                                                autoComplete="off"
+                                                labelHidden
+                                                placeholder={input.label === 'SKU' ? 'Separate by commas' : `Enter value for ${input.label.toLowerCase()}`}
+                                                suffix={input.label === 'SKU' ? undefined : ''}
+
+                                            />
+                                        </Grid.Cell>
+                                    </Grid>
+                                   
+                                    
                                 </BlockStack>
 
-                                // <TextField
-                                //     key={`${input.label}-${index}`}
-                                //     label={input.label}
-                                //     value={input.value}
-                                //     onChange={handleInputChange(index)}
-                                //     autoComplete="off"
-                                // />
+                               
 
 
                             ))
@@ -175,16 +229,18 @@ const Create = () => {
                         )}
                         
                     </BlockStack>
-                       
+                    </Box>
+                    Maximum 3 conditions allwed per rule
 
-                    {/* <TextField
+                    <TextField
                         label="Amount"
                         type="number"
                         value={amount}
                         onChange={setAmount}
                         autoComplete="off"
+                        suffix="%"
                         requiredIndicator
-                    /> */}
+                    />
                     <FormLayout.Group style={{ gap: "1rem" }}>
                         <TextField
                             label="Start Date"

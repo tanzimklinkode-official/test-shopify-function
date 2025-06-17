@@ -259,6 +259,7 @@ class RulesController extends Controller
             'id' => $discountId,
             'namespace' => '$app:discount-rules-function'
         ];
+        
         $response = $shop->api()->graph($query, $variables);
 
         // dd($response);
@@ -274,7 +275,6 @@ class RulesController extends Controller
     {
         $shop = Auth::user();
         $ruleData = $request->ruleData;
-
 
         $globalId = 'gid://shopify/DiscountCodeNode/' . $id;
         $metafieldId = $ruleData['metafieldId'];

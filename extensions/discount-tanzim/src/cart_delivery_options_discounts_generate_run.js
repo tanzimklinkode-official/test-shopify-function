@@ -14,6 +14,13 @@ import {
  */
 
 export function cartDeliveryOptionsDiscountsGenerateRun(input) {
+
+    const rawValue = input?.discount?.metafield?.value;
+    const parsed = JSON.parse(rawValue);
+    const rules = parsed?.ruleData?.rules;
+
+    console.log(JSON.stringify(rules, null, 2));
+
     const firstDeliveryGroup = input.cart.deliveryGroups[0];
     if (!firstDeliveryGroup) {
         throw new Error("No delivery groups found");
@@ -28,7 +35,8 @@ export function cartDeliveryOptionsDiscountsGenerateRun(input) {
     }
 
     const configuration = JSON.parse(input?.discount?.metafield?.value ?? "{}");
-
+    
+    
 
     if (parseFloat(input.cart.cost.totalAmount.amount) > parseFloat(configuration?.ruleData?.amount)) {
         return {

@@ -88,6 +88,10 @@ function cartLinesDiscountsGenerateRun(input) {
 
 // extensions/discount-tanzim/src/cart_delivery_options_discounts_generate_run.js
 function cartDeliveryOptionsDiscountsGenerateRun(input) {
+  const rawValue = input?.discount?.metafield?.value;
+  const parsed = JSON.parse(rawValue);
+  const rules = parsed?.ruleData?.rules;
+  console.log(JSON.stringify(rules, null, 2));
   const firstDeliveryGroup = input.cart.deliveryGroups[0];
   if (!firstDeliveryGroup) {
     throw new Error("No delivery groups found");
