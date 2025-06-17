@@ -1,398 +1,218 @@
-// resources/js/components/Discount.jsx
-
+import { useState,useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Page,
+    Card,
     Text,
+    FormLayout,
     TextField,
     Button,
-    ButtonGroup,
+    InlineError,
+    InlineStack,
+    BlockStack,
     Popover,
     ActionList,
-    Icon,
-    Layout,
-    BlockStack,
-    InlineStack,
-    Card,
-    Box,
-    Select,
-    Grid,
-    Badge,
-    LegacyStack,
-    RadioButton,
-    Checkbox,
+    Banner,
 } from "@shopify/polaris";
-import { useState, useCallback } from 'react';
-import { CaretDownIcon } from '@shopify/polaris-icons';
 import { postRequest } from "../api";
+import { CaretDownIcon } from '@shopify/polaris-icons';
+const Create = () => {
+    const navigate = useNavigate();
+    const [ruleName, setRuleName] = useState("");
+    const [amount, setAmount] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [discountCode, setDiscountCode] = useState("");
+    const [error, setError] = useState(null);
 
-const Discount = () => {
+    // dropdown rules and condition
 
-    const [selectedDiscounts, setSelectedDiscounts] = useState({
-        orderDiscount: false,
-        productDiscount: false,
-        shippingDiscount: false,
-    });
-
-    // Handle checkbox change
-    const handleCheckboxChange = useCallback((newValue, discountType) => {
-        setSelectedDiscounts((prevState) => ({
-            ...prevState,
-            [discountType]: newValue,
-        }));
-    }, []);
-
-    // dropdown
     const [active, setActive] = useState(false);
+    const [inputs, setInputs] = useState([]);
+    const activatorRef = useRef(null);
+    const maxConditions = 3;
 
     const handleToggle = () => {
         setActive((prevState) => !prevState);
     };
 
-    const handleSelect = (selectedItem) => {
-        console.log('Selected Item:', selectedItem);
-        setActive(false);  // Close the popover after selection
-    };
 
-    const activator = (
-        <Button onClick={handleToggle} aria-expanded={active} icon={CaretDownIcon} variant="primary">
-            <Text>Add a Condition</Text>
+    const handleSelect = useCallback((label) => {
+        if (inputs.length < maxConditions) {
+            setInputs((prev) => [...prev, { label, value: '' }]);
+        }
+        setActive(false); // close the popover
+    }, [inputs]);
 
-        </Button>
-    );
+    const handleInputChange = (index) => (value) => {
+        setInputs((prev) => {
+            const updated = [...prev];
+            updated[index].value = value;
+            return updated;
+        });
+    }
 
-    const [textFieldValue, setTextFieldValue] = useState('');
-
-    const handleTextFieldChange = useCallback(
-        (value) => setTextFieldValue(value),
-        []
-    );
-
-    // pressed button
-
-    const [activeButtonIndex, setActiveButtonIndex] = useState(0);
-
-    const handleButtonClick = useCallback(
-        (index) => {
-            if (activeButtonIndex === index) return;
-            setActiveButtonIndex(index);
-        },
-        [activeButtonIndex],
-    );
-    
-    // textfield
-     
-     const handleChange = useCallback(
-    (newValue) => setValue(newValue),
-    [],
-  );
-
-  // generate code
-
-   const [discountCode, setDiscountCode] = useState('');
-    const handleDiscountCodeChange = useCallback(
-    (value) => setDiscountCode(value),
-    []
-  );
-
-    const generateCode = () => {
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase(); // generates 8 random alphanumeric characters
-    setDiscountCode(code);
+    const handleRemove = (indexToRemove) => {
+    setInputs((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  // select discount value
+    // end dropdown
 
-  const [selected, setSelected] = useState('today');
-
-  const handleSelectChange = useCallback(
-    (value) => setSelected(value),
-    [],
-  );
-
-  const options = [
-    {label: 'Percentage', value: 'percentage'},
-    {label: 'Fixed Amount', value: 'fixedAmount'},
-  ];
-const [discountValue, setDiscountValue] = useState(10); 
-  const [discountType, setDiscountType] = useState('percentage');
-  const handleDiscountValueChange = useCallback((value) => setDiscountValue(value), []);
-  const handleDiscountTypeChange = useCallback((value) => setDiscountType(value), []);
-
-
-  // radio
-
-  const [value, setValue] = useState('all');
-
-  const handleRadioChange = useCallback(
-    (newValue) => setValue(newValue),
-    [],
-  );
-
-  // checkbox
-
-    const [isLimitUsedChecked, setIsLimitUsedChecked] = useState(false);
-    const [isLimitToOneChecked, setIsLimitToOneChecked] = useState(false);
-    const [limitValue, setLimitValue] = useState('');
-
-    const handleLimitUsedChange = () => {
-        setIsLimitUsedChecked(prevState => !prevState); 
+    const handleSubmit = async () => {
+        setError(null);
+        if (!ruleName || !amount) {
+            setError("Please fill in all required fields");
+            return;
+        }
+        try {
+            const data = {
+                ruleName,
+                amount,
+                startDate,
+                endDate,
+                discountCode,
+            };
+            const response = await postRequest("/api/rules", data);
+            if (response.success) {
+                navigate("/");
+            } else {
+                setError("Failed to create rule");
+            }
+        } catch (err) {
+            setError("An unexpected error occurred");
+            console.error(err);
+        }
     };
-    const handleLimitToOneChange = () => {
-        setIsLimitToOneChecked(prevState => !prevState);
-    };
-
-    // Handle change for the limit value input
-    const handleLimitValueChange = (e) => {
-        setLimitValue(e.target.value);
-    };
-
-    // discount combo
-
-
-    const [selectedComboDiscounts, setSelectedComboDiscounts] = useState({
-    productDiscount: false,    // Corresponds to "Product discounts"
-    orderDiscount: false,      // Corresponds to "Order discounts"
-    shippingDiscount: false,   // Corresponds to "Shipping discounts"
-  });
-   const handleComboChange = useCallback((newValue, discountType) => {
-    setSelectedDiscounts((prevState) => ({
-      ...prevState,
-      [discountType]: newValue,  // Dynamically set the value of the checkbox
-    }));
-  }, []);
-
     return (
         <Page
             backAction={{ content: "Back", onAction: () => navigate("/") }}
-            title="Create New Discount"
+            title="Create New Rule"
             breadcrumbs={[{ content: "Home", onAction: () => navigate("/") }]}
         >
-            <Layout>
-                <Layout.Section>
-                    <Card sectioned>
+            <Card sectioned>
+                {error && (
+                    <Banner title="Error" status="critical">
+                        <p>{error}</p>
+                    </Banner>
+                )}
+                <FormLayout>
+                    <TextField
+                        label="Rule Name"
+                        value={ruleName}
+                        onChange={setRuleName}
+                        autoComplete="off"
+                        requiredIndicator
+                    />
 
-                        <Text variant="headingMd" as="h2">Discount type</Text>
+                    <BlockStack gap="200">
+                        <Text variant="headingMd" as="h2">
+                            Rules & conditions ({inputs.length} / {maxConditions})
+                        </Text>
 
-                        <div style={{ marginBottom: '10px', marginTop: '10px' }}>
-                            <Checkbox
-                                label="Order discount - (applies to order subtotal)"
-                                checked='true'
-                                onChange={(newValue) => handleCheckboxChange(newValue, 'orderDiscount')}
-                            />
-                        </div>
+                        {inputs.length === 0 ? (
+                            <Text as="span" tone="subdued">No conditions added yet</Text>
+                        ) : (
+                            inputs.map((input, index) => (
 
-
-                        <div style={{ marginBottom: '10px' }}>
-                            <Checkbox
-                                label="Product discount - (applies to individual line items)"
-                                checked={selectedDiscounts.productDiscount}
-                                onChange={(newValue) => handleCheckboxChange(newValue, 'productDiscount')}
-                            />
-                        </div>
-
-
-                        <div style={{ marginBottom: '10px' }}>
-                            <Checkbox
-                                label="Shipping discount - (applies to shipping rates)"
-                                checked={selectedDiscounts.shippingDiscount}
-                                onChange={(newValue) => handleCheckboxChange(newValue, 'shippingDiscount')}
-                            />
-                        </div>
-                        Select whether the discount applies to order subtotal, cart line products, or shipping rates.
-                    </Card>
-                </Layout.Section>
-
-                <Layout.Section>
-                    <Card sectioned>
-                        <BlockStack gap="200"> 
-                        <Text variant="headingMd" as="h2">Rules & conditions( 1 / 3 )</Text>
-
-                        No conditions added yet
-
-                        <Popover
-                            active={active}
-                            activator={activator}
-                            onClose={() => setActive(false)}  // Close the popover when clicking outside
-                        >
-                            <ActionList
-                                items={[
-                                    {
-                                        content: 'Option 1',
-                                        onAction: () => handleSelect('Option 1'),
-                                    },
-                                    {
-                                        content: 'Option 2',
-                                        onAction: () => handleSelect('Option 2'),
-                                    },
-                                    {
-                                        content: 'Option 3',
-                                        onAction: () => handleSelect('Option 3'),
-                                    },
-                                ]}
-                            />
-                        </Popover>
-                        </BlockStack> 
-                    </Card>
-                </Layout.Section>
-
-                <Layout.Section>
-                    <Card sectioned>
-                        <Box display="flex" >
-                            <BlockStack gap="200">
-                                <Text variant="headingMd" as="h2">Discount settings</Text>
-
-                                <TextField
-                                    label="Discount Name"
-                                    value={textFieldValue}
-                                    onChange={handleTextFieldChange}
-                                    maxLength={64} placeholder="New Discount Name"
-                                    autoComplete="off"
-                                    showCharacterCount
-                                />
-                                Used only for configuration purposes as a reference and not visible to customers.
-
-                                <Text variant="bodymd" as="h4" >
-                                    Discount Method
-                                </Text>
-
-                                <ButtonGroup variant="segmented">
-                                    <Button
-                                        pressed={activeButtonIndex === 0}
-                                        onClick={() => handleButtonClick(0)}
-                                    >Discount Code</Button>
-                                    <Button
-                                        pressed={activeButtonIndex === 1}
-                                        onClick={() => handleButtonClick(1)}
-                                    >Automatic Discount</Button>
-                                </ButtonGroup>
-
-
-                                <Box>
-                                    <InlineStack
-                                        align="space-between"
-                                        wrap
-                                        gap="2"
-                                        direction="row"
-                                    >
-                                        <Text variant="bodyMd">Discount code</Text>
-                                        <Button variant="plain" size="medium"  onClick={generateCode} >
-                                            <Text variant="bodySm">Generate random code</Text>
+                                <BlockStack key={`${input.label}-${index}`} gap="200">
+                                    <InlineStack align="space-between">
+                                        <Text variant="bodyMd">{input.label}</Text>
+                                        <Button
+                                            variant="plain"
+                                            size="medium"
+                                            onClick={() => handleRemove(index)}
+                                        >
+                                            <Text variant="bodySm" ><small>remove</small></Text>
                                         </Button>
                                     </InlineStack>
-                                </Box>
-
-                                <TextField
-                                    value={discountCode}
-                                    onChange={handleDiscountCodeChange}
-                                    autoComplete="off"
-                                />
-                               
-                                Customers must enter this code at checkout.
-
-
-                                <Grid>
-                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                        <Select
-                                            label="Discount Value"
-                                            value={selected}
-                                            options={options}
-                                            onChange={handleSelectChange}
-                                        />
-                                    </Grid.Cell>
-                                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                                        <TextField
-                                            label="Discount Amount"
-                                            value={discountValue}
-                                            onChange={handleDiscountValueChange}
-                                            type="number"
-                                            suffix="%"
-                                            labelStyle={{
-                                                visibility: 'hidden',
-                                            }}
-
-                                        />
-                                    </Grid.Cell>
-                                </Grid>
-                            </BlockStack>
-                        </Box>
-                    </Card>
-                </Layout.Section>
-
-
-                <Layout.Section>
-
-                    <Card sectioned>
-                        <Box >
-                            <LegacyStack vertical gap="200">
-                                <Text variant="headingMd" as="h2">Discount applies to</Text>
-
-                                <RadioButton
-                                    label="All Products"
-                                    checked={value === 'all'}
-                                    id="allProductsRadio"
-                                    name="discountType"
-                                     onChange={() => handleRadioChange('all')}
-                                />
-                                <RadioButton
-                                    label="Selected Products Only"
-                                    id="specificProductsRadio"
-                                    name="discountType"
-                                    checked={value === 'specificProducts'}
-                                     onChange={() => handleRadioChange('specificProducts')}
-                                />
-                            </LegacyStack >
-                        </Box>
-                    </Card>
-
-                </Layout.Section>
-
-                <Layout.Section>
-
-                    <Card sectioned>
-                        <Box >
-                            <LegacyStack vertical gap="200">
-                                <Text variant="headingMd" as="h2">Maximum Discount Use</Text>
-
-                                <Checkbox
-                                    label="Limit number of times this discount can be used in total"
-                                    checked={isLimitUsedChecked}
-                                    onChange={handleLimitUsedChange}
-                                />
-                                {isLimitUsedChecked && (
-                                    <input
-                                        type="number"
-                                        value={limitValue}
-                                        onChange={handleLimitValueChange}
-                                        placeholder="Enter the limit"
+                                    <TextField
+                                        value={input.value}
+                                        onChange={handleInputChange(index)}
+                                        autoComplete="off"
+                                        
                                     />
-                                )}
-                                <Checkbox
-                                    label="Limit to one user per customer"
-                                    checked={isLimitToOneChecked}
-                                     onChange={handleLimitToOneChange}
+                                </BlockStack>
+
+                                // <TextField
+                                //     key={`${input.label}-${index}`}
+                                //     label={input.label}
+                                //     value={input.value}
+                                //     onChange={handleInputChange(index)}
+                                //     autoComplete="off"
+                                // />
+
+
+                            ))
+                        )}
+
+                        {inputs.length < maxConditions && (
+                            <Popover
+                                active={active}
+                                activator={
+                                    <Button icon={CaretDownIcon} variant="primary" onClick={() => setActive((prev) => !prev)} disclosure>
+                                        Add condition
+                                    </Button>
+                                }
+                                onClose={() => setActive(false)}
+                            >
+                                <ActionList
+                                    items={[
+                                        {
+                                            content: 'Cart Total',
+                                            onAction: () => handleSelect('Cart Total'),
+                                        },
+                                        {
+                                            content: 'Item Count',
+                                            onAction: () => handleSelect('Item Count'),
+                                        },
+                                        {
+                                            content: 'SKU',
+                                            onAction: () => handleSelect('SKU'),
+                                        },
+                                    ]}
                                 />
-                            </LegacyStack >
-                        </Box>
-                    </Card>
+                            </Popover>
+                        )}
+                        
+                    </BlockStack>
+                       
 
-                </Layout.Section>
-
-
-                <Layout.Section>
-
-                    <Card sectioned>
-                        <Box >
-                            
-                        </Box>
-                    </Card>
-
-                </Layout.Section>
-
-            </Layout>
-
-
+                    {/* <TextField
+                        label="Amount"
+                        type="number"
+                        value={amount}
+                        onChange={setAmount}
+                        autoComplete="off"
+                        requiredIndicator
+                    /> */}
+                    <FormLayout.Group style={{ gap: "1rem" }}>
+                        <TextField
+                            label="Start Date"
+                            type="date"
+                            value={startDate}
+                            onChange={setStartDate}
+                        />
+                        <TextField
+                            label="End Date"
+                            type="date"
+                            value={endDate}
+                            onChange={setEndDate}
+                        />
+                    </FormLayout.Group>
+                    <TextField
+                        label="Discount Code"
+                        value={discountCode}
+                        onChange={setDiscountCode}
+                        autoComplete="off"
+                    />
+                    <div style={{ textAlign: "right" }}>
+                        <Button primary onClick={handleSubmit}>
+                            Create Rule
+                        </Button>
+                    </div>
+                </FormLayout>
+            </Card>
         </Page>
-
     );
 };
-
-export default Discount;
+export default Create;
