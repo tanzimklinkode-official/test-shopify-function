@@ -32,6 +32,7 @@ const Edit = () => {
   const [endDate, setEndDate] = useState("");
   const [discountCode, setDiscountCode] = useState("");
   const [metafieldId, setMetafieldId] = useState("");
+  const [discountMessagevalue, setDiscountMessageValue] = useState('');
 
   // Loading and notification
   const [loading, setLoading] = useState(true);
@@ -60,13 +61,15 @@ const Edit = () => {
           }
 
           setMetafieldId(response.rule.id);
-          const { ruleName, amount, startDate, endDate, discountCode,rules } = parsedValue.ruleData;
+          const { ruleName, amount, startDate, endDate, discountCode,discountMessagevalue,rules } = parsedValue.ruleData;
 
           setRuleName(ruleName || "");
           setAmount(amount || "");
           setStartDate(startDate || "");
           setEndDate(endDate || "");
           setDiscountCode(discountCode || "");
+          setDiscountMessageValue(discountMessagevalue || "");
+
 
           setInputs(
             (rules || []).map(rule => {
@@ -170,6 +173,40 @@ const Edit = () => {
 
   // end dropdown
 
+  // amount percentage
+
+
+    const handleAmountChange = (value) => {
+        
+        const num = Number(value);
+
+        if (!Number.isInteger(num) || num < 1 || num >100) {
+            return; 
+        }
+
+        setAmount(value);
+    };
+
+    // generate code
+
+    const handleDiscountCodeChange = useCallback(
+    (value) => setDiscountCode(value),
+    []
+  );
+
+    const generateCode = () => {
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase(); // generates 8 random alphanumeric characters
+    setDiscountCode(code);
+  };
+
+
+  //discount message
+
+    const handleDiscountMessage = useCallback(
+        (value) => setDiscountMessageValue(value),
+        []
+    );
+
   // Handle form submission
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -180,6 +217,7 @@ const Edit = () => {
       startDate,
       endDate,
       discountCode,
+      discountMessagevalue,      
       rules: inputs.map(input => ({
         label: input.label,
         type: input.condition,
@@ -327,10 +365,11 @@ const Edit = () => {
 
                 <TextField
                   label="Amount"
-                  type="number"
+                  type="integer"
                   value={amount}
-                  onChange={setAmount}
+                  onChange={handleAmountChange}
                   autoComplete="off"
+                  suffix="%"
                   requiredIndicator
                 />
 
@@ -349,12 +388,35 @@ const Edit = () => {
                   />
                 </FormLayout.Group>
 
+                  <Box>
+                    <InlineStack
+                      align="space-between"
+                      wrap
+                      gap="1"
+                      direction="row"
+                    >
+                      <Text variant="bodyMd">Discount code</Text>
+                      <Button variant="plain" size="medium" onClick={generateCode} >
+                        <Text variant="bodySm">Generate random code</Text>
+                      </Button>
+                    </InlineStack>
+                  </Box>
                 <TextField
-                  label="Discount Code"
                   value={discountCode}
-                  onChange={setDiscountCode}
+                  onChange={handleDiscountCodeChange}
                   autoComplete="off"
                 />
+
+                 <TextField
+                        label="Applied discount message"
+                        value={discountMessagevalue}
+                        maxLength={64}
+                        onChange={handleDiscountMessage}
+                        autoComplete="off"
+                        showCharacterCount
+                    />
+                    Enter the informational text which will be displayed at the checkout once the discount is successfully applied.
+
 
                 <div style={{ textAlign: "right" }}>
                   <Button primary submit>

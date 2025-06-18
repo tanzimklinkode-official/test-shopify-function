@@ -5,6 +5,9 @@ query DeliveryInput {
         amount
       }
     }
+    lines {
+      quantity
+    }
     deliveryGroups {
       id
     }

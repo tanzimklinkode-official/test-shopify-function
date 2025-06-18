@@ -91,7 +91,40 @@ function cartDeliveryOptionsDiscountsGenerateRun(input) {
   const rawValue = input?.discount?.metafield?.value;
   const parsed = JSON.parse(rawValue);
   const rules = parsed?.ruleData?.rules;
-  console.log(JSON.stringify(rules, null, 2));
+  var discountArr = [];
+  let messageValue = "";
+  let productQuantity = 0;
+  for (const line of input.cart.lines) {
+    productQuantity += line.quantity;
+  }
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    switch (rule.label) {
+      case "Cart Total":
+        if (rule.type === "more_than" && input.cart.cost.totalAmount.amount > rule.value) {
+          discountArr.push(true);
+        } else if (rule.type === "less_than" && input.cart.cost.totalAmount.amount < rule.value) {
+          discountArr.push(true);
+        } else {
+          discountArr.push(false);
+        }
+        break;
+      case "Item Count":
+        if (rule.type === "more_than" && productQuantity > rule.value) {
+          discountArr.push(true);
+        } else if (rule.type === "less_than" && productQuantity < rule.value) {
+          discountArr.push(true);
+        } else {
+          discountArr.push(false);
+        }
+        break;
+      case "SKU":
+        break;
+      default:
+        console.log(`Unknown rule: ${rule.label}`);
+        break;
+    }
+  }
   const firstDeliveryGroup = input.cart.deliveryGroups[0];
   if (!firstDeliveryGroup) {
     throw new Error("No delivery groups found");
@@ -103,6 +136,39 @@ function cartDeliveryOptionsDiscountsGenerateRun(input) {
     return { operations: [] };
   }
   const configuration = JSON.parse(input?.discount?.metafield?.value ?? "{}");
+  console.log(discountArr.every(Boolean));
+  if (discountArr.every(Boolean) === true) {
+    messageValue = configuration?.ruleData?.discountMessagevalue;
+    console.log(messageValue);
+    return {
+      operations: [
+        {
+          deliveryDiscountsAdd: {
+            candidates: [
+              {
+                message: messageValue,
+                targets: [
+                  {
+                    deliveryGroup: {
+                      id: firstDeliveryGroup.id
+                    }
+                  }
+                ],
+                value: {
+                  percentage: {
+                    value: parseFloat(configuration?.ruleData?.amount)
+                  }
+                }
+              }
+            ],
+            selectionStrategy: "ALL" /* All */
+          }
+        }
+      ]
+    };
+  } else {
+    return { operations: [] };
+  }
   if (parseFloat(input.cart.cost.totalAmount.amount) > parseFloat(configuration?.ruleData?.amount)) {
     return {
       operations: [

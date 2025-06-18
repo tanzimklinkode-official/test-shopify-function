@@ -87,6 +87,42 @@ const Create = () => {
 
     // end dropdown
 
+    // amount percentage
+
+
+    const handleAmountChange = (value) => {
+        
+        const num = Number(value);
+
+        if (!Number.isInteger(num) || num < 1 || num >100) {
+            return; 
+        }
+
+        setAmount(value);
+    };
+
+    //discount message
+
+    const [discountMessagevalue, setDiscountMessageValue] = useState('');
+    const handleDiscountMessage = useCallback(
+        (value) => setDiscountMessageValue(value),
+        []
+    );
+
+    // generate code
+
+    const handleDiscountCodeChange = useCallback(
+    (value) => setDiscountCode(value),
+    []
+  );
+
+    const generateCode = () => {
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase(); // generates 8 random alphanumeric characters
+    setDiscountCode(code);
+  };
+
+  //submit
+
     const handleSubmit = async () => {
         setError(null);
         if (!ruleName || !amount) {
@@ -100,6 +136,7 @@ const Create = () => {
                 startDate,
                 endDate,
                 discountCode,
+                discountMessagevalue,
                 rules: inputs.map(input => ({
                 label: input.label,
                 type: input.condition,
@@ -234,9 +271,9 @@ const Create = () => {
 
                     <TextField
                         label="Amount"
-                        type="number"
+                        type="integer"
                         value={amount}
-                        onChange={setAmount}
+                        onChange={handleAmountChange}
                         autoComplete="off"
                         suffix="%"
                         requiredIndicator
@@ -255,12 +292,36 @@ const Create = () => {
                             onChange={setEndDate}
                         />
                     </FormLayout.Group>
+                
+                    <Box>
+                        <InlineStack
+                            align="space-between"
+                            wrap
+                            gap="1"
+                            direction="row"
+                        >
+                            <Text variant="bodyMd">Discount code</Text>
+                            <Button variant="plain" size="medium" onClick={generateCode} >
+                                <Text variant="bodySm">Generate random code</Text>
+                            </Button>
+                        </InlineStack>
+                    </Box>
                     <TextField
-                        label="Discount Code"
                         value={discountCode}
-                        onChange={setDiscountCode}
+                        onChange={handleDiscountCodeChange}
                         autoComplete="off"
                     />
+
+                    <TextField
+                        label="Applied discount message"
+                        value={discountMessagevalue}
+                        maxLength={64}
+                        onChange={handleDiscountMessage}
+                        autoComplete="off"
+                        showCharacterCount
+                    />
+                    Enter the informational text which will be displayed at the checkout once the discount is successfully applied.
+
                     <div style={{ textAlign: "right" }}>
                         <Button primary onClick={handleSubmit}>
                             Create Rule
